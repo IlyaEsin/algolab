@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/AlgoLab.Api/web/package-lock.json
+
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build -c Release
+
+      - run: npm ci
+        working-directory: src/AlgoLab.Api/web
+      - run: npm test
+        working-directory: src/AlgoLab.Api/web
+      - run: npm run build
+        working-directory: src/AlgoLab.Api/web
+
+      - run: docker build -t algolab:ci .
