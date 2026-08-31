@@ -17,8 +17,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AlgoLab.Core\AlgoLab.Core.csproj" />
-    <ProjectReference Include="..\AlgoLab.Fixtures.ShapeCollision\AlgoLab.Fixtures.ShapeCollision.csproj" />
-    <ProjectReference Include="..\AlgoLab.Fixtures.BadConstructor\AlgoLab.Fixtures.BadConstructor.csproj" />
   </ItemGroup>
 
 </Project>

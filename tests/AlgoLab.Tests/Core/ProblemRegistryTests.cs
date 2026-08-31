@@ -1,15 +1,19 @@
 using System.Reflection;
 using AlgoLab.Core.Contracts;
 using AlgoLab.Core.Registry;
-using AlgoLab.Fixtures.BadConstructor;
-using AlgoLab.Fixtures.ShapeCollision;
 using AlgoLab.Tests.Fakes;
+using AlgoLab.Tests.Fakes.Isolated;
 
 namespace AlgoLab.Tests.Core;
 
 public sealed class ProblemRegistryTests
 {
-    private static ProblemRegistry Registry => ProblemRegistry.Build(Assembly.GetExecutingAssembly());
+    // Точное совпадение по namespace, а не StartsWith: так изолированные фикстуры для
+    // гвардов (namespace "AlgoLab.Tests.Fakes.Isolated") могут жить рядом, не попадая
+    // в общий реестр, а любые новые фейки в "AlgoLab.Tests.Fakes" подхватываются сами,
+    // без правки этого фильтра.
+    private static ProblemRegistry Registry => ProblemRegistry.Build(
+        Assembly.GetExecutingAssembly().GetTypes().Where(t => t.Namespace == "AlgoLab.Tests.Fakes"));
 
     [Fact]
     public void Finds_every_problem_in_the_assembly()
@@ -77,11 +81,8 @@ public sealed class ProblemRegistryTests
     [Fact]
     public void Two_problems_sharing_the_same_input_output_pair_are_rejected()
     {
-        // Коллизия живёт в отдельной сборке (AlgoLab.Fixtures.ShapeCollision), а не в
-        // FakeProblems.cs: Build сканирует сборку целиком, поэтому пара, закрывающая одну
-        // и ту же (TInput, TOutput), сломала бы Registry для каждого другого теста в этом файле.
         var error = Assert.Throws<InvalidOperationException>(
-            () => ProblemRegistry.Build(typeof(CollisionProblemA).Assembly));
+            () => ProblemRegistry.Build([typeof(CollisionProblemA), typeof(CollisionProblemB)]));
 
         Assert.Contains(nameof(CollisionProblemA), error.Message, StringComparison.Ordinal);
         Assert.Contains(nameof(CollisionProblemB), error.Message, StringComparison.Ordinal);
@@ -91,9 +92,8 @@ public sealed class ProblemRegistryTests
     [Fact]
     public void Problem_without_a_parameterless_constructor_fails_with_a_friendly_message()
     {
-        // Тоже своя сборка, по той же причине, что и у теста коллизии выше.
         var error = Assert.Throws<InvalidOperationException>(
-            () => ProblemRegistry.Build(typeof(BadConstructorProblem).Assembly));
+            () => ProblemRegistry.Build([typeof(BadConstructorProblem)]));
 
         Assert.Contains(nameof(BadConstructorProblem), error.Message, StringComparison.Ordinal);
         Assert.IsType<MissingMethodException>(error.InnerException);

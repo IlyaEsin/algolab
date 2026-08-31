@@ -1,12 +1,11 @@
 using AlgoLab.Core.Contracts;
 
-namespace AlgoLab.Fixtures.ShapeCollision;
+namespace AlgoLab.Tests.Fakes.Isolated;
 
-// Отдельная сборка, а не файл в AlgoLab.Tests: ProblemRegistry.Build сканирует всю сборку,
-// а не отдельные файлы, и общий статический Registry в ProblemRegistryTests пересобирается
-// на каждое обращение через Assembly.GetExecutingAssembly(). Помести эту пару типов в
-// AlgoLab.Tests (даже как вложенный private-класс) — и коллизия будет брошена для каждого
-// теста в файле, а не только для теста, который её проверяет.
+// Namespace "AlgoLab.Tests.Fakes.Isolated", not "AlgoLab.Tests.Fakes": the shared Registry in
+// ProblemRegistryTests scopes its scan to an exact match on "AlgoLab.Tests.Fakes", so these
+// deliberately-broken fixtures never reach it. Each guard test instead calls
+// ProblemRegistry.Build with exactly the types it needs.
 public sealed record CollisionInput(int Value);
 
 public sealed class CollisionProblemA : Problem<CollisionInput, int>
@@ -37,4 +36,16 @@ public sealed class CollisionProblemB : Problem<CollisionInput, int>
     [
         new(new CollisionInput(1), 1, "базовый"),
     ];
+}
+
+public sealed record BadConstructorInput(int Value);
+
+/// <summary>Намеренно без публичного конструктора без параметров.</summary>
+public sealed class BadConstructorProblem(int seed) : Problem<BadConstructorInput, int>
+{
+    private readonly int _seed = seed;
+
+    public override ProblemInfo Info => throw new NotImplementedException($"seed={_seed}");
+
+    public override IEnumerable<TestCase<BadConstructorInput, int>> Cases => throw new NotImplementedException();
 }

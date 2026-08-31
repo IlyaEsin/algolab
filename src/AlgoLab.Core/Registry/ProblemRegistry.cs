@@ -18,13 +18,16 @@ public sealed class ProblemRegistry
     public ProblemDescriptor? Find(string slug) =>
         _bySlug.GetValueOrDefault(slug);
 
-    public static ProblemRegistry Build(params Assembly[] assemblies)
+    public static ProblemRegistry Build(params Assembly[] assemblies) =>
+        Build(assemblies.SelectMany(a => a.GetTypes()));
+
+    public static ProblemRegistry Build(IEnumerable<Type> types)
     {
-        var types = assemblies.SelectMany(a => a.GetTypes())
+        var candidates = types
             .Where(t => t is { IsAbstract: false, IsGenericTypeDefinition: false })
             .ToArray();
 
-        var solutionsByShape = types
+        var solutionsByShape = candidates
             .Select(t => new { Type = t, Shape = ClosedInterface(t, typeof(ISolution<,>)) })
             .Where(x => x.Shape is not null)
             .GroupBy(x => x.Shape!, ShapeComparer.Instance)
@@ -34,7 +37,7 @@ public sealed class ProblemRegistry
         var attached = new HashSet<Type>();
         var problemTypeByShape = new Dictionary<Type[], Type>(ShapeComparer.Instance);
 
-        foreach (var problemType in types.Where(t => ClosedBase(t, typeof(Problem<,>)) is not null))
+        foreach (var problemType in candidates.Where(t => ClosedBase(t, typeof(Problem<,>)) is not null))
         {
             var shape = ClosedBase(problemType, typeof(Problem<,>))!;
 
