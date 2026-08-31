@@ -20,13 +20,4 @@ public sealed class ClimbingStairs : Problem<ClimbingStairsInput, long>
         new(new ClimbingStairsInput(10), 89L, "десять ступеней"),
         new(new ClimbingStairsInput(1), 1L, "одна ступень"),
     ];
-
-    public override IInputScaler<ClimbingStairsInput> Scaler => new ClimbingStairsScaler();
-}
-
-/// <summary>Число ступеней ограничено 90: дальше результат не влезает в long,
-/// а задача не про длинную арифметику.</summary>
-public sealed class ClimbingStairsScaler : IInputScaler<ClimbingStairsInput>
-{
-    public ClimbingStairsInput Create(int n, int seed) => new(Math.Clamp(n, 1, 90));
 }

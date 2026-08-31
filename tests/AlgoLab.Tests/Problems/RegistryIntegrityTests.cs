@@ -1,4 +1,6 @@
 using AlgoLab.Core.Contracts;
+using AlgoLab.Core.Json;
+using AlgoLab.Core.Measuring;
 using AlgoLab.Core.Registry;
 using AlgoLab.Core.Resources;
 using AlgoLab.Core.Running;
@@ -100,5 +102,50 @@ public sealed class RegistryIntegrityTests
         {
             ProblemRunner.RunScaledInput(problem, solution, n: 256, seed: 0);
         }
+    }
+
+    /// <summary>Ловит скейлер, который где-то по дороге насыщается (типично — зажимает
+    /// значение в допустимый диапазон): если вход на двух верхних ступенях лестницы
+    /// по умолчанию совпал, дальше он совпадает и подавно, кривая роста не может
+    /// получиться, и любая заявленная сложность на этих данных обречена читаться как
+    /// Divergent — не потому что решение неверно, а потому что измерять уже нечего.
+    /// Проверяются именно верхние две ступени: насыщение — если оно есть — тем заметнее,
+    /// чем крупнее n, а на маленьких n тот же скейлер вполне может честно отличаться.</summary>
+    [Theory]
+    [MemberData(nameof(Slugs))]
+    public void Scaler_input_still_grows_at_the_top_of_the_default_ladder(string slug)
+    {
+        var problem = Registry.Find(slug)!;
+        if (!problem.HasScaler)
+        {
+            return;
+        }
+
+        var high = MeasureOptions.Default.MaxN;
+        var low = high / 2;
+
+        var inputAtLow = DescribeScaledInput(problem, low, MeasureOptions.Seed);
+        var inputAtHigh = DescribeScaledInput(problem, high, MeasureOptions.Seed);
+
+        Assert.NotEqual(inputAtLow, inputAtHigh);
+    }
+
+    /// <summary>Строит вход скейлера напрямую, в обход ProblemRunner.RunScaledInput — тот
+    /// прогоняет вход через решение и ничего не возвращает, а нам нужен сам вход для
+    /// сравнения. ProblemAdapter, который его прячет, — internal и не виден тестам, поэтому
+    /// вместо расширения публичной поверхности ядра задача поднимается заново через уже
+    /// публичный ProblemType (тот же самый parameterless-конструктор, который уже требует
+    /// реестр) и её собственное публичное свойство Scaler. IInputScaler{TInput} ковариантен
+    /// по TInput, а все входы задач — record-классы (ссылочные типы), поэтому после одной
+    /// рефлексивной выборки самого Scaler дальше можно работать через IInputScaler{object}
+    /// без дальнейшей рефлексии.</summary>
+    private static string DescribeScaledInput(ProblemDescriptor problem, int n, int seed)
+    {
+        var instance = Activator.CreateInstance(problem.ProblemType)!;
+        var scaler = (IInputScaler<object>)problem.ProblemType
+            .GetProperty(nameof(Problem<object, object>.Scaler))!
+            .GetValue(instance)!;
+
+        return AlgoLabJson.Describe(scaler.Create(n, seed));
     }
 }
