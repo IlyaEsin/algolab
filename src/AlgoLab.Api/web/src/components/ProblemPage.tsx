@@ -50,7 +50,7 @@ export function ProblemPage({ slug }: { slug: string }) {
       </div>
       <h3 className="mb-2 mt-6 font-medium">Решения</h3>
       {detail.solutions.map((s) => (
-        <SolutionCard key={s.id} solution={s} revealed={revealed} onReveal={reveal} />
+        <SolutionCard key={s.id} slug={slug} solution={s} revealed={revealed} onReveal={reveal} />
       ))}
     </main>
   )

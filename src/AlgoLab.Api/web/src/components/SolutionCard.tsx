@@ -1,13 +1,15 @@
 import type { SolutionView } from '../api/types'
 import { CodeBlock } from './CodeBlock'
+import { RunPanel } from './RunPanel'
 
 interface Props {
+  slug: string
   solution: SolutionView
   revealed: boolean
   onReveal: () => void
 }
 
-export function SolutionCard({ solution, revealed, onReveal }: Props) {
+export function SolutionCard({ slug, solution, revealed, onReveal }: Props) {
   const hidden = solution.kind === 'Reference' && !revealed
 
   return (
@@ -26,6 +28,7 @@ export function SolutionCard({ solution, revealed, onReveal }: Props) {
       ) : (
         <CodeBlock code={solution.source} />
       )}
+      <RunPanel slug={slug} solutionId={solution.id} kind={solution.kind} />
     </section>
   )
 }
