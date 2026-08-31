@@ -46,3 +46,17 @@ test('solved marks are stored per problem', () => {
   expect(isSolved('two-sum')).toBe(true)
   expect(isSolved('lru-cache')).toBe(false)
 })
+
+test('revealed state follows a changed slug on the same hook instance, not the previous problem', () => {
+  const { result, rerender } = renderHook(({ slug }) => useReveal(slug), {
+    initialProps: { slug: 'two-sum' },
+  })
+  act(() => result.current.reveal())
+  expect(result.current.revealed).toBe(true)
+
+  rerender({ slug: 'valid-parentheses' })
+  expect(result.current.revealed).toBe(false)
+
+  rerender({ slug: 'two-sum' })
+  expect(result.current.revealed).toBe(true)
+})

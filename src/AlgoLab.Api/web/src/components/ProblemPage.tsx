@@ -7,12 +7,33 @@ import { Statement } from './Statement'
 
 export function ProblemPage({ slug }: { slug: string }) {
   const [detail, setDetail] = useState<ProblemDetail | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const { revealed, reveal } = useReveal(slug)
 
   useEffect(() => {
+    let cancelled = false
     setDetail(null)
-    api.getProblem(slug).then(setDetail)
+    setError(null)
+    api
+      .getProblem(slug)
+      .then((d) => {
+        if (!cancelled) {
+          setDetail(d)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : String(err))
+        }
+      })
+    return () => {
+      cancelled = true
+    }
   }, [slug])
+
+  if (error) {
+    return <p className="p-6 text-sm text-red-600">Не удалось загрузить задачу: {error}</p>
+  }
 
   if (!detail) {
     return <p className="p-6 text-sm text-slate-500">Загрузка…</p>
