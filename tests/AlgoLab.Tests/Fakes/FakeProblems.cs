@@ -163,3 +163,35 @@ public sealed class SlowQuadratic : ISolution<SlowInput, int>
         return total;
     }
 }
+
+public sealed record LoudInput(int Value);
+
+public sealed class LoudProblem : Problem<LoudInput, int>
+{
+    public override ProblemInfo Info => new(
+        Slug: "fake-loud",
+        Title: "Шумное решение",
+        Source: "https://example.com/loud",
+        Difficulty: Difficulty.Easy,
+        Tags: [Tag.Array]);
+
+    public override IEnumerable<TestCase<LoudInput, int>> Cases =>
+    [
+        new(new LoudInput(2), 4, "базовый"),
+    ];
+}
+
+/// <summary>Печатает в консоль — обычное дело для практикующегося, который отлаживается через
+/// Console.WriteLine. Существует, чтобы проверить: RunnerProgram обязан спрятать Console.Out и
+/// Console.Error решения за TextWriter.Null на время исполнения, иначе этот вывод попал бы в тот
+/// же stdout, что и JSON-payload, и испортил бы его.</summary>
+[Solution("Шумное решение", Time = Complexity.O1, Space = Complexity.O1)]
+public sealed class LoudDoubles : ISolution<LoudInput, int>
+{
+    public int Solve(LoudInput input)
+    {
+        Console.WriteLine("{\"noise\": \"this would corrupt the payload if it reached stdout\"}");
+        Console.Error.WriteLine("шум и в stderr");
+        return input.Value * 2;
+    }
+}
