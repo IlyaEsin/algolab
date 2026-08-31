@@ -1,6 +1,7 @@
 using AlgoLab.Core.Contracts;
 using AlgoLab.Core.Registry;
 using AlgoLab.Core.Resources;
+using AlgoLab.Core.Running;
 
 namespace AlgoLab.Tests.Problems;
 
@@ -82,6 +83,22 @@ public sealed class RegistryIntegrityTests
         foreach (var solution in problem.Solutions)
         {
             Assert.Contains("class", SourceStore.ReadSource(solution.SolutionType), StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Slugs))]
+    public void Scaled_input_is_handled_by_every_reference_solution(string slug)
+    {
+        var problem = Registry.Find(slug)!;
+        if (!problem.HasScaler)
+        {
+            return;
+        }
+
+        foreach (var solution in problem.Solutions.Where(s => s.Kind == SolutionKind.Reference))
+        {
+            ProblemRunner.RunScaledInput(problem, solution, n: 256, seed: 0);
         }
     }
 }

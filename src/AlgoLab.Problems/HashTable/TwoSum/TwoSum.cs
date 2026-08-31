@@ -35,7 +35,7 @@ public sealed class TwoSumScaler : IInputScaler<TwoSumInput>
         var nums = new int[size];
         for (var i = 0; i < size; i++)
         {
-            nums[i] = random.Next(1, 1_000_000) * 2;
+            nums[i] = random.Next(2, 1_000_000) * 2;
         }
 
         nums[size - 2] = 1;

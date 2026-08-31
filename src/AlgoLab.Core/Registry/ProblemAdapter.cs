@@ -17,6 +17,8 @@ internal abstract class ProblemAdapter
 
     public abstract IReadOnlyList<CaseDescription> DescribeCases();
 
+    public abstract void RunScaledInput(SolutionDescriptor solution, int n, int seed);
+
     public static ProblemAdapter Create(object problemInstance, Type inputType, Type outputType)
     {
         var adapterType = typeof(ProblemAdapter<,>).MakeGenericType(inputType, outputType);
@@ -39,6 +41,16 @@ internal sealed class ProblemAdapter<TInput, TOutput>(Problem<TInput, TOutput> p
                 AlgoLabJson.Describe(c.Input),
                 AlgoLabJson.Describe(c.Expected)))
             .ToArray();
+
+    public override void RunScaledInput(SolutionDescriptor solution, int n, int seed)
+    {
+        var scaler = Problem.Scaler
+            ?? throw new InvalidOperationException($"Задача '{Problem.Info.Slug}' не задаёт Scaler.");
+
+        var input = scaler.Create(n, seed);
+        var instance = (ISolution<TInput, TOutput>)Activator.CreateInstance(solution.SolutionType)!;
+        instance.Solve(input);
+    }
 
     public override RunResult RunCases(SolutionDescriptor solution)
     {
