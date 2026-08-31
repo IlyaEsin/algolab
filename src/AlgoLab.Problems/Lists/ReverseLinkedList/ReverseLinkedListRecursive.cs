@@ -3,7 +3,10 @@ using AlgoLab.Core.Contracts;
 namespace AlgoLab.Problems.Lists.ReverseLinkedList;
 
 [Solution("Рекурсия", Time = Complexity.ON, Space = Complexity.ON,
-    Note = "Глубина рекурсии равна длине списка — на длинном входе переполнит стек.")]
+    Note = "Глубина рекурсии равна длине списка — на длинном входе переполнит стек, "
+        + "и это отдельная от кучи память, которую измерение не видит. Сама O(n) "
+        + "здесь измерена по куче и, как и у итеративного решения, отражает "
+        + "построение списка из входного массива и обратно внутри Solve.")]
 public sealed class ReverseLinkedListRecursive : ISolution<ReverseLinkedListInput, int[]>
 {
     public int[] Solve(ReverseLinkedListInput input) =>
