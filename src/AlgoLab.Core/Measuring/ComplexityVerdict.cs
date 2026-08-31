@@ -20,4 +20,14 @@ public sealed record ComplexityVerdict(
     Complexity Declared,
     Complexity BestFit,
     double FitQuality,
-    VerdictKind Kind);
+    VerdictKind Kind)
+{
+    /// <summary>Человекочитаемое представление <see cref="Declared"/> для клиента —
+    /// та же таблица, что уже используется для <c>SolutionView</c>, чтобы не дублировать
+    /// её в TypeScript, где она разъехалась бы с этой. Get-only, поэтому не участвует
+    /// в равенстве записи.</summary>
+    public string DeclaredText => Declared.Display();
+
+    /// <summary>Человекочитаемое представление <see cref="BestFit"/>, см. <see cref="DeclaredText"/>.</summary>
+    public string BestFitText => BestFit.Display();
+}

@@ -54,6 +54,8 @@ export interface RunResult {
 export interface ComplexityVerdict {
   declared: string
   bestFit: string
+  declaredText: string
+  bestFitText: string
   fitQuality: number
   kind: Verdict
 }

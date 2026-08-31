@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { ProblemDetail } from '../api/types'
 import { useReveal } from '../state/useReveal'
+import { MeasurePanel } from './MeasurePanel'
 import { SolutionCard } from './SolutionCard'
 import { Statement } from './Statement'
 
@@ -52,6 +53,7 @@ export function ProblemPage({ slug }: { slug: string }) {
       {detail.solutions.map((s) => (
         <SolutionCard key={s.id} slug={slug} solution={s} revealed={revealed} onReveal={reveal} />
       ))}
+      {detail.summary.hasScaler && <MeasurePanel slug={slug} solutions={detail.solutions} />}
     </main>
   )
 }
