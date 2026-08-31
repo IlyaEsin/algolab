@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using AlgoLab.Core.Json;
 using AlgoLab.Core.Running;
@@ -39,5 +40,34 @@ public sealed class RunnerProcessTests
 
         var payload = JsonSerializer.Deserialize<RunnerPayload>(stdout, AlgoLabJson.Options)!;
         Assert.Equal(RunStatus.Passed, payload.Run!.Status);
+    }
+
+    /// <summary>Пинит кодировку stdout: если Program.cs вернётся к неявной Console.OutputEncoding,
+    /// кириллица в сообщении об ошибке может прийти не в UTF-8 в зависимости от того, как хост
+    /// запустил процесс, и этот тест перестанет находить ожидаемую подстроку.</summary>
+    [Fact]
+    public void Runner_emits_cyrillic_error_text_as_utf8()
+    {
+        var info = new ProcessStartInfo(ExecutablePath)
+        {
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            StandardOutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+        };
+        info.ArgumentList.Add("cases");
+        info.ArgumentList.Add("--slug");
+        info.ArgumentList.Add("nope");
+        info.ArgumentList.Add("--solution");
+        info.ArgumentList.Add("X");
+
+        using var process = Process.Start(info)!;
+        var stdout = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+
+        Assert.Equal(1, process.ExitCode);
+
+        var payload = JsonSerializer.Deserialize<RunnerPayload>(stdout, AlgoLabJson.Options)!;
+        Assert.NotNull(payload.Error);
+        Assert.Contains("не найдена", payload.Error, StringComparison.Ordinal);
     }
 }
