@@ -48,6 +48,13 @@ public static class ComplexityFit
         }
 
         var declaredQuality = Quality(points, declared);
+        if (!double.IsFinite(declaredQuality))
+        {
+            // Заявленный класс сам не подгоняется (например, Grow переполнился на измеренных n) —
+            // сравнение неопределено. Ложный Divergent недопустим, поэтому уходим в Inconclusive.
+            return new ComplexityVerdict(declared, best.Complexity, best.Quality, VerdictKind.Inconclusive);
+        }
+
         var kind = declared == best.Complexity || declaredQuality >= best.Quality - Tolerance
             ? VerdictKind.Consistent
             : VerdictKind.Divergent;
@@ -59,7 +66,7 @@ public static class ComplexityFit
     /// Ряд из одинаковых значений (нулевая дисперсия) считается идеально константным.</summary>
     private static double Quality(IReadOnlyList<FitPoint> points, Complexity complexity)
     {
-        if (complexity == Complexity.Unknown)
+        if (complexity == Complexity.Unknown || points.Count == 0)
         {
             return double.NaN;
         }
