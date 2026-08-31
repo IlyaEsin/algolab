@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\AlgoLab.Core\AlgoLab.Core.csproj" />
     <ProjectReference Include="..\..\src\AlgoLab.Problems\AlgoLab.Problems.csproj" />
+    <ProjectReference Include="..\..\src\AlgoLab.Runner\AlgoLab.Runner.csproj" />
   </ItemGroup>
 
 </Project>
