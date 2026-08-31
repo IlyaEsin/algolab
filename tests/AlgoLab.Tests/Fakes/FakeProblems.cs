@@ -195,3 +195,36 @@ public sealed class LoudDoubles : ISolution<LoudInput, int>
         return input.Value * 2;
     }
 }
+
+public sealed record DeepRecursionInput(int Depth);
+
+public sealed class DeepRecursionProblem : Problem<DeepRecursionInput, int>
+{
+    public override ProblemInfo Info => new(
+        Slug: "fake-deep-recursion",
+        Title: "Глубокая рекурсия",
+        Source: "https://example.com/deep-recursion",
+        Difficulty: Difficulty.Easy,
+        Tags: [Tag.Array]);
+
+    // Глубина подобрана измерением: на потоке с дефолтным стеком (~1 МБ) такая рекурсия
+    // (без хвостового вызова — после Recurse ещё есть "+1") надёжно переполняется уже на
+    // 25-30 тысячах кадров в Release, а 50 000 даёт запас с большим отрывом. На потоке
+    // с большим стеком (см. RunnerProgram) она отрабатывает за миллисекунды.
+    public override IEnumerable<TestCase<DeepRecursionInput, int>> Cases =>
+    [
+        new(new DeepRecursionInput(50_000), 50_000, "глубина, переполняющая стек по умолчанию"),
+    ];
+}
+
+/// <summary>Рекурсия без хвостового вызова, глубина которой надёжно переполняет поток с
+/// дефолтным стеком (~1 МБ) — существует, чтобы проверить, что раннер даёт решению
+/// достаточно большой стек, а не падает необрабатываемым StackOverflowException, который
+/// (в отличие от обычного исключения) убивает процесс целиком без единого байта на stdout.</summary>
+[Solution("Рекурсия без хвостового вызова", Time = Complexity.ON, Space = Complexity.ON)]
+public sealed class DeepRecursion : ISolution<DeepRecursionInput, int>
+{
+    public int Solve(DeepRecursionInput input) => Recurse(input.Depth);
+
+    private static int Recurse(int depth) => depth <= 0 ? 0 : 1 + Recurse(depth - 1);
+}

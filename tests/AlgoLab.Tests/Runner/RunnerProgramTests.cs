@@ -100,4 +100,30 @@ public sealed class RunnerProgramTests
         Assert.Contains("OUT-RESTORED", buffer, StringComparison.Ordinal);
         Assert.Contains("ERROR-RESTORED", buffer, StringComparison.Ordinal);
     }
+
+    // Guards the stack-size fix: recursion is not an accident in this problem set (tree
+    // traversals, graph search and divide-and-conquer all recurse by nature), and the default
+    // ~1 MB thread stack is too small for it at any real depth. StackOverflowException cannot
+    // be caught in .NET, so a regression here does not fail this assertion cleanly — it kills
+    // the process outright. That is deliberate: the only way to prove the fix (running the
+    // solution on a thread with a large explicit stack) is in place is to run a solution that
+    // would overflow the default stack for real and see the process survive.
+    [Fact]
+    public void A_solution_that_recurses_past_the_default_stack_still_returns_a_payload()
+    {
+        var writer = new StringWriter();
+
+        var exitCode = RunnerProgram.Run(
+            ["cases", "--slug", "fake-deep-recursion", "--solution", nameof(DeepRecursion)],
+            FakeRegistry.Instance,
+            writer);
+
+        Assert.Equal(0, exitCode);
+
+        var payload = JsonSerializer.Deserialize<RunnerPayload>(writer.ToString(), AlgoLabJson.Options);
+
+        Assert.NotNull(payload);
+        Assert.Null(payload!.Error);
+        Assert.Equal(RunStatus.Passed, payload.Run!.Status);
+    }
 }

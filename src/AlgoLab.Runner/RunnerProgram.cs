@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using AlgoLab.Core.Json;
 using AlgoLab.Core.Registry;
@@ -12,6 +13,14 @@ namespace AlgoLab.Runner;
 /// попытки (обычное дело при отладке) попал бы в тот же stdout и испортил бы JSON.</summary>
 public static class RunnerProgram
 {
+    /// <summary>Стек потока по умолчанию (около 1 МБ) слишком мал для решений, которые
+    /// рекурсируют по природе задачи (обходы деревьев, списков, разбиение пополам) — на
+    /// большом входе они переполняют его. StackOverflowException в .NET нельзя поймать,
+    /// поэтому процесс просто падает без единого байта на stdout. Вместо того чтобы ужимать
+    /// задачи под тесный стек, решение исполняется на выделенном потоке с большим — так
+    /// рекурсия остаётся естественным способом решения, а не тем, что ломает исполнителя.</summary>
+    private const int SolutionStackSizeBytes = 64 * 1024 * 1024;
+
     public static int Run(string[] args, TextWriter output)
     {
         try
@@ -35,7 +44,7 @@ public static class RunnerProgram
             Console.SetOut(TextWriter.Null);
             Console.SetError(TextWriter.Null);
 
-            var payload = RunnerCommand.Execute(args, registry);
+            var payload = RunOnDedicatedStack(() => RunnerCommand.Execute(args, registry));
             Write(output, payload);
             return payload.Error is null ? 0 : 1;
         }
@@ -48,6 +57,36 @@ public static class RunnerProgram
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
+    }
+
+    /// <summary>Выполняет работу на отдельном потоке с большим стеком и ждёт её завершения.
+    /// Console.Out/Error — статические свойства, общие на весь процесс, а не для потока, поэтому
+    /// подмена в вызывающем потоке действует и здесь без какой-либо дополнительной настройки.
+    /// Исключение из рабочего потока перевыбрасывается в вызывающем через
+    /// <see cref="ExceptionDispatchInfo"/> — тип, сообщение и стек не меняются, так что
+    /// обработка ошибок выше остаётся такой же, как если бы работа выполнялась синхронно.</summary>
+    private static T RunOnDedicatedStack<T>(Func<T> work)
+    {
+        T? result = default;
+        ExceptionDispatchInfo? failure = null;
+
+        var worker = new Thread(() =>
+        {
+            try
+            {
+                result = work();
+            }
+            catch (Exception exception)
+            {
+                failure = ExceptionDispatchInfo.Capture(exception);
+            }
+        }, SolutionStackSizeBytes);
+
+        worker.Start();
+        worker.Join();
+
+        failure?.Throw();
+        return result!;
     }
 
     private static int WriteFailure(TextWriter output, Exception exception)
