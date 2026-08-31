@@ -1,5 +1,23 @@
 import { useEffect, useState } from 'react'
-import { codeToHtml } from 'shiki'
+import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
+import csharp from 'shiki/langs/csharp.mjs'
+import githubLight from 'shiki/themes/github-light.mjs'
+
+// Fine-grained bundle: this app highlights exactly one language, so pulling in shiki's
+// full bundle (every grammar it supports) would bloat the production build for no reason.
+// The JS regex engine avoids an onig.wasm asset too. One shared highlighter, loaded once
+// and reused across every CodeBlock instance.
+let highlighterPromise: Promise<HighlighterCore> | null = null
+
+function getHighlighter(): Promise<HighlighterCore> {
+  highlighterPromise ??= createHighlighterCore({
+    themes: [githubLight],
+    langs: [csharp],
+    engine: createJavaScriptRegexEngine(),
+  })
+  return highlighterPromise
+}
 
 export function CodeBlock({ code }: { code: string }) {
   const [html, setHtml] = useState('')
@@ -7,7 +25,8 @@ export function CodeBlock({ code }: { code: string }) {
   useEffect(() => {
     let cancelled = false
     setHtml('')
-    codeToHtml(code, { lang: 'csharp', theme: 'github-light' })
+    getHighlighter()
+      .then((highlighter) => highlighter.codeToHtml(code, { lang: 'csharp', theme: 'github-light' }))
       .then((result) => {
         if (!cancelled) {
           setHtml(result)

@@ -3,9 +3,15 @@ import type { GrowthSeries } from '../api/types'
 
 const colors = ['#2563eb', '#dc2626', '#059669', '#d97706']
 
-/** Ось X логарифмическая: только так разница между n и n^2 читается как разный наклон.
- * Ось Y — тоже, но лишь когда все значения строго положительны: allocatedBytes легитимно
- * равен нулю для O(1)-памяти, а логарифмическая шкала не может отобразить ноль. */
+/** Ось Y логарифмическая, только если все значения строго положительны: allocatedBytes
+ * легитимно равен нулю для O(1)-памяти, а логарифмическая шкала не может отобразить ноль.
+ * Вынесена в чистую функцию — рендер ResponsiveContainer недоступен под jsdom, а это
+ * решение всё равно должно проверяться отдельно от полного рендера графика. */
+export function yAxisScale(values: number[]): 'log' | 'linear' {
+  return values.every((v) => v > 0) ? 'log' : 'linear'
+}
+
+/** Ось X логарифмическая: только так разница между n и n^2 читается как разный наклон. */
 export function GrowthChart({ series, metric }: { series: GrowthSeries[]; metric: 'time' | 'space' }) {
   const sizes = [...new Set(series.flatMap((s) => s.points.map((p) => p.n)))].sort((a, b) => a - b)
 
@@ -21,7 +27,7 @@ export function GrowthChart({ series, metric }: { series: GrowthSeries[]; metric
   })
 
   const values = series.flatMap((s) => s.points.map((p) => (metric === 'time' ? p.medianMs : p.allocatedBytes)))
-  const yScale = values.every((v) => v > 0) ? 'log' : 'linear'
+  const yScale = yAxisScale(values)
 
   return (
     <ResponsiveContainer width="100%" height={320}>
