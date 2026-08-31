@@ -32,12 +32,23 @@ public sealed class ProblemRegistry
 
         var problems = new List<ProblemDescriptor>();
         var attached = new HashSet<Type>();
+        var problemTypeByShape = new Dictionary<Type[], Type>(ShapeComparer.Instance);
 
         foreach (var problemType in types.Where(t => ClosedBase(t, typeof(Problem<,>)) is not null))
         {
             var shape = ClosedBase(problemType, typeof(Problem<,>))!;
-            var instance = Activator.CreateInstance(problemType)
-                ?? throw new InvalidOperationException($"Задача '{problemType.Name}' не создаётся — нужен публичный конструктор без параметров.");
+
+            if (problemTypeByShape.TryGetValue(shape, out var existingProblemType))
+            {
+                throw new InvalidOperationException(
+                    $"Задачи '{existingProblemType.FullName}' и '{problemType.FullName}' закрывают одну и ту же пару "
+                    + $"(вход, выход) — ({shape[0].FullName}, {shape[1].FullName}). "
+                    + "Решения привязываются к задаче по этой паре, поэтому у пары типов может быть только одна задача.");
+            }
+
+            problemTypeByShape.Add(shape, problemType);
+
+            var instance = CreateProblemInstance(problemType);
 
             var adapter = ProblemAdapter.Create(instance, shape[0], shape[1]);
 
@@ -73,6 +84,19 @@ public sealed class ProblemRegistry
         }
 
         return new ProblemRegistry(problems.OrderBy(p => p.Info.Slug, StringComparer.Ordinal).ToArray());
+    }
+
+    private static object CreateProblemInstance(Type problemType)
+    {
+        try
+        {
+            return Activator.CreateInstance(problemType)!;
+        }
+        catch (MissingMethodException ex)
+        {
+            throw new InvalidOperationException(
+                $"Задача '{problemType.FullName}' не создаётся — нужен публичный конструктор без параметров.", ex);
+        }
     }
 
     private static SolutionAttribute Describe(Type solutionType) =>

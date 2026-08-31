@@ -1,6 +1,8 @@
 using System.Reflection;
 using AlgoLab.Core.Contracts;
 using AlgoLab.Core.Registry;
+using AlgoLab.Fixtures.BadConstructor;
+using AlgoLab.Fixtures.ShapeCollision;
 using AlgoLab.Tests.Fakes;
 
 namespace AlgoLab.Tests.Core;
@@ -70,5 +72,30 @@ public sealed class ProblemRegistryTests
         var error = Assert.Throws<InvalidOperationException>(() => problem.Solution("Nope"));
 
         Assert.Contains("fake-sum", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Two_problems_sharing_the_same_input_output_pair_are_rejected()
+    {
+        // Коллизия живёт в отдельной сборке (AlgoLab.Fixtures.ShapeCollision), а не в
+        // FakeProblems.cs: Build сканирует сборку целиком, поэтому пара, закрывающая одну
+        // и ту же (TInput, TOutput), сломала бы Registry для каждого другого теста в этом файле.
+        var error = Assert.Throws<InvalidOperationException>(
+            () => ProblemRegistry.Build(typeof(CollisionProblemA).Assembly));
+
+        Assert.Contains(nameof(CollisionProblemA), error.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(CollisionProblemB), error.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(CollisionInput), error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Problem_without_a_parameterless_constructor_fails_with_a_friendly_message()
+    {
+        // Тоже своя сборка, по той же причине, что и у теста коллизии выше.
+        var error = Assert.Throws<InvalidOperationException>(
+            () => ProblemRegistry.Build(typeof(BadConstructorProblem).Assembly));
+
+        Assert.Contains(nameof(BadConstructorProblem), error.Message, StringComparison.Ordinal);
+        Assert.IsType<MissingMethodException>(error.InnerException);
     }
 }
