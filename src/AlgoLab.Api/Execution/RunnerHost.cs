@@ -95,6 +95,13 @@ public sealed class RunnerHost(ILogger<RunnerHost> logger)
             logger.LogWarning("Runner stderr: {Errors}", errors);
         }
 
+        return ParsePayload(output, logger);
+    }
+
+    /// <summary>Чистое преобразование захваченного вывода в payload — без обращения к процессу,
+    /// поэтому проверяется напрямую строками, без спавна дочернего процесса.</summary>
+    internal static RunnerPayload ParsePayload(string output, ILogger logger)
+    {
         if (string.IsNullOrWhiteSpace(output))
         {
             return new RunnerPayload(Run: null, Series: null, Error: "Исполнитель ничего не вернул.");

@@ -5,4 +5,9 @@
     <ProjectReference Include="..\AlgoLab.Runner\AlgoLab.Runner.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Lets AlgoLab.Tests exercise RunnerHost.ParsePayload directly, without spawning a process. -->
+    <InternalsVisibleTo Include="AlgoLab.Tests" />
+  </ItemGroup>
+
 </Project>
