@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <EmbeddedResource Include="**\*.cs" Exclude="bin\**;obj\**" />
+    <EmbeddedResource Include="**\README.md" Exclude="bin\**;obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AlgoLab.Core\AlgoLab.Core.csproj" />
+  </ItemGroup>
+
+</Project>
