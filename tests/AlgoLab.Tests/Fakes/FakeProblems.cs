@@ -80,3 +80,32 @@ public sealed class NoiseReverse : ISolution<NoiseInput, string>
 {
     public string Solve(NoiseInput input) => new(input.Text.Reverse().ToArray());
 }
+
+public sealed record WrongInput(int Value);
+
+public sealed class WrongProblem : Problem<WrongInput, int>
+{
+    public override ProblemInfo Info => new(
+        Slug: "fake-wrong",
+        Title: "Удвоение",
+        Source: "https://example.com/wrong",
+        Difficulty: Difficulty.Easy,
+        Tags: [Tag.Array]);
+
+    public override IEnumerable<TestCase<WrongInput, int>> Cases =>
+    [
+        new(new WrongInput(2), 4, "двойка"),
+    ];
+}
+
+[Solution("Всегда ноль", Time = Complexity.O1, Space = Complexity.O1)]
+public sealed class WrongAlwaysZero : ISolution<WrongInput, int>
+{
+    public int Solve(WrongInput input) => 0;
+}
+
+[Solution("Бросает", Time = Complexity.O1, Space = Complexity.O1)]
+public sealed class WrongThrows : ISolution<WrongInput, int>
+{
+    public int Solve(WrongInput input) => throw new InvalidOperationException("сломано");
+}
