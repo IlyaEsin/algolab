@@ -109,3 +109,57 @@ public sealed class WrongThrows : ISolution<WrongInput, int>
 {
     public int Solve(WrongInput input) => throw new InvalidOperationException("сломано");
 }
+
+public sealed record SlowInput(int[] Values);
+
+public sealed class SlowProblem : Problem<SlowInput, int>
+{
+    public override ProblemInfo Info => new(
+        Slug: "fake-slow",
+        Title: "Квадратичная сумма",
+        Source: "https://example.com/slow",
+        Difficulty: Difficulty.Medium,
+        Tags: [Tag.Array]);
+
+    public override IEnumerable<TestCase<SlowInput, int>> Cases =>
+    [
+        // Пары (1,1),(1,2),(2,1),(2,2) дают 2+3+3+4.
+        new(new SlowInput([1, 2]), 12, "все пары"),
+    ];
+
+    public override IInputScaler<SlowInput> Scaler => new SlowScaler();
+}
+
+public sealed class SlowScaler : IInputScaler<SlowInput>
+{
+    public SlowInput Create(int n, int seed)
+    {
+        var random = new Random(seed);
+        var values = new int[n];
+        for (var i = 0; i < n; i++)
+        {
+            values[i] = random.Next(0, 10);
+        }
+
+        return new SlowInput(values);
+    }
+}
+
+[Solution("Все пары", Time = Complexity.ON2, Space = Complexity.ON)]
+public sealed class SlowQuadratic : ISolution<SlowInput, int>
+{
+    public int Solve(SlowInput input)
+    {
+        var copy = input.Values.ToArray();
+        var total = 0;
+        for (var i = 0; i < copy.Length; i++)
+        {
+            for (var j = 0; j < copy.Length; j++)
+            {
+                total += copy[i] + copy[j];
+            }
+        }
+
+        return total;
+    }
+}

@@ -1,4 +1,3 @@
-using System.Reflection;
 using AlgoLab.Core.Contracts;
 using AlgoLab.Core.Registry;
 using AlgoLab.Tests.Fakes;
@@ -8,12 +7,7 @@ namespace AlgoLab.Tests.Core;
 
 public sealed class ProblemRegistryTests
 {
-    // Точное совпадение по namespace, а не StartsWith: так изолированные фикстуры для
-    // гвардов (namespace "AlgoLab.Tests.Fakes.Isolated") могут жить рядом, не попадая
-    // в общий реестр, а любые новые фейки в "AlgoLab.Tests.Fakes" подхватываются сами,
-    // без правки этого фильтра.
-    private static ProblemRegistry Registry => ProblemRegistry.Build(
-        Assembly.GetExecutingAssembly().GetTypes().Where(t => t.Namespace == "AlgoLab.Tests.Fakes"));
+    private static ProblemRegistry Registry => FakeRegistry.Instance;
 
     [Fact]
     public void Finds_every_problem_in_the_assembly()

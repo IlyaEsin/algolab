@@ -1,4 +1,3 @@
-using System.Reflection;
 using AlgoLab.Core.Registry;
 using AlgoLab.Core.Running;
 using AlgoLab.Tests.Fakes;
@@ -7,11 +6,7 @@ namespace AlgoLab.Tests.Core;
 
 public sealed class ProblemRunnerTests
 {
-    // Filtered to the exact "AlgoLab.Tests.Fakes" namespace like ProblemRegistryTests.Registry:
-    // an unfiltered Assembly.GetExecutingAssembly() scan also picks up the deliberately
-    // colliding guard fixtures in "AlgoLab.Tests.Fakes.Isolated", which makes Build() throw.
-    private static ProblemRegistry Registry => ProblemRegistry.Build(
-        Assembly.GetExecutingAssembly().GetTypes().Where(t => t.Namespace == "AlgoLab.Tests.Fakes"));
+    private static ProblemRegistry Registry => FakeRegistry.Instance;
 
     [Fact]
     public void Correct_solution_passes_all_cases()
