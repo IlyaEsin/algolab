@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, test, vi, afterEach, beforeEach } from 'vitest'
 import { isSolved } from '../state/useReveal'
@@ -94,9 +94,14 @@ test('a second click while a run is in flight does not start a concurrent run', 
   render(<RunPanel slug="two-sum" solutionId="TwoSumAttempt" kind="Attempt" />)
   const button = screen.getByRole('button', { name: 'Запустить' })
 
-  // Two clicks dispatched back-to-back, before React has a chance to disable the button.
-  fireEvent.click(button)
-  fireEvent.click(button)
+  // Two raw click events dispatched inside one act() batch, so React has not yet
+  // committed the `disabled` state between them -- this reproduces a real fast
+  // double-click, unlike two separate fireEvent.click() calls (which React's
+  // synchronous act-flush already serializes on its own, masking a missing guard).
+  act(() => {
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  })
 
   expect(fetchMock).toHaveBeenCalledTimes(1)
 
