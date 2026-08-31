@@ -50,6 +50,10 @@ internal sealed class ProblemAdapter<TInput, TOutput>(Problem<TInput, TOutput> p
 
         foreach (var testCase in Problem.Cases)
         {
+            var name = testCase.Name;
+            var input = AlgoLabJson.Describe(testCase.Input);
+            var expected = AlgoLabJson.Describe(testCase.Expected);
+
             var stopwatch = Stopwatch.StartNew();
             try
             {
@@ -57,9 +61,9 @@ internal sealed class ProblemAdapter<TInput, TOutput>(Problem<TInput, TOutput> p
                 stopwatch.Stop();
                 var passed = comparer.Equals(testCase.Expected, actual);
                 results.Add(new CaseResult(
-                    testCase.Name,
-                    AlgoLabJson.Describe(testCase.Input),
-                    AlgoLabJson.Describe(testCase.Expected),
+                    name,
+                    input,
+                    expected,
                     AlgoLabJson.Describe(actual),
                     passed,
                     stopwatch.Elapsed.TotalMilliseconds,
@@ -70,9 +74,9 @@ internal sealed class ProblemAdapter<TInput, TOutput>(Problem<TInput, TOutput> p
                 stopwatch.Stop();
                 notImplemented = true;
                 results.Add(new CaseResult(
-                    testCase.Name,
-                    AlgoLabJson.Describe(testCase.Input),
-                    AlgoLabJson.Describe(testCase.Expected),
+                    name,
+                    input,
+                    expected,
                     Actual: string.Empty,
                     Passed: false,
                     stopwatch.Elapsed.TotalMilliseconds,
@@ -83,9 +87,9 @@ internal sealed class ProblemAdapter<TInput, TOutput>(Problem<TInput, TOutput> p
                 stopwatch.Stop();
                 errored = true;
                 results.Add(new CaseResult(
-                    testCase.Name,
-                    AlgoLabJson.Describe(testCase.Input),
-                    AlgoLabJson.Describe(testCase.Expected),
+                    name,
+                    input,
+                    expected,
                     Actual: string.Empty,
                     Passed: false,
                     stopwatch.Elapsed.TotalMilliseconds,
